@@ -1,0 +1,45 @@
+# MCP Servers Configuration Example
+# Copy this file to mcp_config.yaml and fill in your values
+#
+# Format 1: Internal Python MCP servers (simplified)
+#   - name: calculator
+#     path: agent/tools/calculator.py
+#     args: {"--port": "8080"}  # optional
+#
+# Format 2: External MCP servers (full control)
+#   - name: chrome-devtools
+#     command: npx
+#     args: ["-y", "chrome-devtools-mcp@latest"]
+#     env: {"API_KEY": "xxx"}  # optional
+
+mcp_servers:
+  - name: calculator
+    path: agent/tools/calculator.py
+    enabled: true
+
+  - name: web_search
+    path: agent/tools/web_search.py
+    enabled: false
+    env:
+      ZHIPU_API_KEY: "${ZHIPU_API_KEY}"  # Set via environment variable
+
+  - name: rag
+    path: agent/tools/rag.py
+    enabled: true
+
+  - name: chrome-devtools
+    command: npx
+    args: ["-y", "chrome-devtools-mcp@latest"]
+    enabled: true
+
+# Native LangChain tools (not MCP)
+native_tools:
+  - name: get_weather
+    enabled: true
+
+# LLM Configuration
+llm:
+  base_url: https://api.openai.com/v1  # Your LLM API endpoint
+  api_key: "your-api-key-here"          # Your API key
+  model: gpt-4                          # Model name
+  temperature: 0.3

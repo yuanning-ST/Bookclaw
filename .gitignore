@@ -1,0 +1,51 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Sensitive configuration (use mcp_config.example.yaml as template)
+mcp_config.yaml
+
+# Database files
+*.db
+*.db-journal
+milvus_data.db
+
+# Data directories
+books/
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+search_results*.txt
+*.png
+*.jpg
+*.jpeg
+
+# Claude
+.claude/
+CLAUDE.md
