@@ -187,8 +187,8 @@ mcp_servers:
 
 ```markdown
 # user_preferences
-
-
+...
+```
 ## 快速开始
 
 ### 安装依赖
