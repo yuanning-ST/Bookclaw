@@ -350,7 +350,7 @@ class SubagentGraph:
         self._log(f"开始执行: {task_preview}")
 
         initial_state = {"messages": messages, "tool_calls": []}
-        final_state = await self.graph.ainvoke(initial_state)
+        final_state = await self.graph.ainvoke(initial_state, config={"recursion_limit": 50})
 
         if final_state.get("messages"):
             result = final_state["messages"][-1].content

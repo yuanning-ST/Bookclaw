@@ -21,18 +21,19 @@ mcp = FastMCP("rag")
 
 
 @mcp.tool()
-def rag_search(query: str, limit: int = 5) -> str:
+def rag_search(query: str, limit: int = 5, file_path: str = None) -> str:
     """
     在知识库中搜索相关内容。
 
     Args:
         query: 搜索查询词
         limit: 返回结果数量（默认 5）
+        file_path: 可选，限定在某本书内搜索（如 "17763-通信管道人孔和手孔图集.pdf"）
 
     Returns:
         JSON 字符串，包含相关文档块和置信度分数
     """
-    results = rag.search(query=query, limit=limit)
+    results = rag.search(query=query, limit=limit, file_path=file_path)
 
     if not results:
         return json.dumps({"results": [], "message": "未找到相关内容"}, ensure_ascii=False)

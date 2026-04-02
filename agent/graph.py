@@ -227,7 +227,7 @@ class AgentGraph:
             "tool_calls": [],
         }
 
-        final_state = await self.graph.ainvoke(initial_state)
+        final_state = await self.graph.ainvoke(initial_state, config={"recursion_limit": 50})
         response = final_state.get("messages", [])[-1].content if final_state.get("messages") else None
         return response, final_state.get("messages")
 

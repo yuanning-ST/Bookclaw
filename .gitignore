@@ -17,8 +17,10 @@ mcp_config.yaml
 *.db-journal
 milvus_data.db
 
-# Data directories
-books/
+# Data directories - keep structure but ignore PDFs
+books/*.pdf
+books/*.PDF
+rag_data/*.json
 
 # Environment files
 .env
