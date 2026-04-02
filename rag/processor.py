@@ -1,10 +1,12 @@
 """
 RAG 处理器 - 整合文档读取、分块、存储和检索
 """
+import os
 from typing import List, Dict, Any, Optional
 from .file_reader import FileReader
 from .text_chunker import ChineseTextChunker
 from .vector_store import MilvusVectorStore
+from .incremental import IncrementalUpdater
 
 
 class RAGProcessor:
@@ -18,6 +20,7 @@ class RAGProcessor:
         milvus_uri: str = "./milvus_data.db",  # 默认使用本地文件模式
         collection_name: str = "bookclaw_chunks",
         embedding_api_base: Optional[str] = None,
+        hash_file: str = "./rag_data/file_hashes.json",
     ):
         """
         初始化 RAG 处理器
@@ -29,6 +32,7 @@ class RAGProcessor:
             milvus_uri: Milvus 地址 (本地文件模式: "./milvus_data.db", 服务模式: "http://localhost:19530")
             collection_name: 集合名称
             embedding_api_base: Embedding API 地址
+            hash_file: 哈希记录文件路径
         """
         self.files_dir = files_dir
         self.file_reader = FileReader(files_dir)
@@ -38,6 +42,11 @@ class RAGProcessor:
             collection_name=collection_name,
             milvus_uri=milvus_uri,
             embedding_api_base=embedding_api_base,
+        )
+
+        self.incremental_updater = IncrementalUpdater(
+            files_dir=files_dir,
+            hash_file=hash_file,
         )
 
     def ingest_file(self, file_path: str) -> Dict[str, Any]:
@@ -156,4 +165,115 @@ class RAGProcessor:
             "total_files": len(files),
             "total_chunks": self.vector_store.count(),
             "files": files,
+        }
+
+    def detect_new_files(self) -> Dict[str, List[str]]:
+        """
+        检测文件变化（新增、修改、未变化、删除）
+
+        Returns:
+            Dict: {"new": 新增文件, "modified": 修改文件, "unchanged": 未变化文件, "deleted": 删除文件}
+        """
+        return self.incremental_updater.detect_all_changes()
+
+    def ingest_incremental(self, include_modified: bool = False) -> Dict[str, Any]:
+        """
+        增量更新：只处理新增的文件
+
+        Args:
+            include_modified: 是否也处理修改过的文件（默认只处理新增文件）
+
+        Returns:
+            Dict: 更新结果
+        """
+        changes = self.detect_new_files()
+        new_files = changes["new"]
+        modified_files = changes["modified"]
+        deleted_files = changes["deleted"]
+
+        # 要处理的文件列表
+        files_to_process = new_files
+        if include_modified:
+            files_to_process = new_files + modified_files
+
+        results = {
+            "new_files_processed": [],
+            "modified_files_processed": [],
+            "deleted_files_cleaned": [],
+            "errors": [],
+        }
+
+        # 处理新增/修改的文件
+        for file_path in files_to_process:
+            try:
+                # 读取文件内容
+                full_path = os.path.join(self.files_dir, file_path)
+                content = self.file_reader.read_file_by_path(full_path)
+
+                if not content or content.startswith("[无法读取"):
+                    results["errors"].append({
+                        "file_path": file_path,
+                        "error": "无法读取文件内容",
+                    })
+                    continue
+
+                # 分块
+                chunks = self.chunker.chunk_text_to_strings(content)
+
+                # 删除旧数据（如果有）
+                self.vector_store.delete_by_file_path(file_path)
+
+                # 存储新数据
+                metadata = {
+                    "file_path": file_path,
+                    "chunk_count": len(chunks),
+                    "content_length": len(content),
+                }
+                ids = self.vector_store.add_chunks(file_path, chunks, metadata)
+
+                # 标记文件已处理（更新哈希记录）
+                self.incremental_updater.mark_file_processed(file_path, full_path)
+
+                if file_path in new_files:
+                    results["new_files_processed"].append({
+                        "file_path": file_path,
+                        "chunk_count": len(chunks),
+                        "inserted_ids": list(ids) if ids else [],
+                    })
+                else:
+                    results["modified_files_processed"].append({
+                        "file_path": file_path,
+                        "chunk_count": len(chunks),
+                        "inserted_ids": list(ids) if ids else [],
+                    })
+
+            except Exception as e:
+                results["errors"].append({
+                    "file_path": file_path,
+                    "error": str(e),
+                })
+
+        # 清理已删除文件的哈希记录
+        for file_path in deleted_files:
+            self.incremental_updater.remove_deleted_records([file_path])
+            # 也删除向量库中的数据
+            self.vector_store.delete_by_file_path(file_path)
+            results["deleted_files_cleaned"].append(file_path)
+
+        return results
+
+    def get_incremental_stats(self) -> Dict[str, Any]:
+        """获取增量更新统计信息"""
+        changes = self.detect_new_files()
+        return {
+            "vector_store": self.get_stats(),
+            "file_changes": {
+                "new_count": len(changes["new"]),
+                "modified_count": len(changes["modified"]),
+                "unchanged_count": len(changes["unchanged"]),
+                "deleted_count": len(changes["deleted"]),
+                "new_files": changes["new"],
+                "modified_files": changes["modified"],
+            },
+            "hash_records": self.incremental_updater.get_stats(),
         }

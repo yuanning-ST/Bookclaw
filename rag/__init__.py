@@ -6,6 +6,7 @@ from .file_reader import FileReader
 from .text_chunker import ChineseTextChunker
 from .processor import RAGProcessor
 from .embedding import BGEM3Embeddings
+from .incremental import FileHashManager, IncrementalUpdater
 
 __all__ = [
     "MilvusVectorStore",
@@ -13,4 +14,6 @@ __all__ = [
     "ChineseTextChunker",
     "RAGProcessor",
     "BGEM3Embeddings",
+    "FileHashManager",
+    "IncrementalUpdater",
 ]

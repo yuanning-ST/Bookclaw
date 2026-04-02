@@ -78,5 +78,39 @@ def rag_list_files() -> str:
     return json.dumps({"files": files}, ensure_ascii=False, indent=2)
 
 
+@mcp.tool()
+def rag_update(include_modified: bool = False) -> str:
+    """
+    增量更新知识库，检测并处理新增的图书文件。
+
+    Args:
+        include_modified: 是否也处理修改过的文件（默认只处理新增文件）
+
+    Returns:
+        JSON 字符串，包含更新结果统计
+    """
+    result = rag.ingest_incremental(include_modified=include_modified)
+
+    output = {
+        "success": True,
+        "new_files_count": len(result["new_files_processed"]),
+        "modified_files_count": len(result["modified_files_processed"]),
+        "deleted_files_count": len(result["deleted_files_cleaned"]),
+        "errors_count": len(result["errors"]),
+        "new_files": [
+            {"file_path": f["file_path"], "chunk_count": f["chunk_count"]}
+            for f in result["new_files_processed"]
+        ],
+        "modified_files": [
+            {"file_path": f["file_path"], "chunk_count": f["chunk_count"]}
+            for f in result["modified_files_processed"]
+        ],
+        "deleted_files": result["deleted_files_cleaned"],
+        "errors": result["errors"],
+    }
+
+    return json.dumps(output, ensure_ascii=False, indent=2)
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")

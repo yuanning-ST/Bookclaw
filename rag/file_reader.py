@@ -155,3 +155,31 @@ class FileReader:
                 return yaml.dump(data, allow_unicode=True, default_flow_style=False)
         except Exception as e:
             return f"[无法读取 YAML 文件内容：{str(e)}]"
+
+    def read_file_by_path(self, file_path: str) -> str:
+        """
+        根据文件路径读取单个文件
+
+        Args:
+            file_path: 文件完整路径
+
+        Returns:
+            str: 文件内容
+        """
+        file_ext = os.path.splitext(file_path)[1].lower()
+
+        supported_extensions = {
+            '.txt': self._read_txt,
+            '.pdf': self._read_pdf,
+            '.md': self._read_markdown,
+            '.docx': self._read_docx,
+            '.csv': self._read_csv,
+            '.json': self._read_json,
+            '.yaml': self._read_yaml,
+            '.yml': self._read_yaml,
+        }
+
+        if file_ext in supported_extensions:
+            return supported_extensions[file_ext](file_path)
+        else:
+            return f"[不支持的文件格式：{file_ext}]"

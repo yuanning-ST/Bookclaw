@@ -229,7 +229,7 @@ class AgentGraph:
 
         final_state = await self.graph.ainvoke(initial_state)
         response = final_state.get("messages", [])[-1].content if final_state.get("messages") else None
-        return response
+        return response, final_state.get("messages")
 
 
 if __name__ == "__main__":

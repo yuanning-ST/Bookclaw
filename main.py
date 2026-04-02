@@ -5,7 +5,7 @@ Usage:
     python main.py
 """
 import asyncio
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage,AIMessage
 from agent.graph import AgentGraph
 from agent.tools import GetWeatherTool, CurrentTimeTool
 
@@ -19,15 +19,16 @@ async def main():
 
     # 初始化（连接 MCP 服务器，加载工具）
     await agent.initialize()
-
-    # 运行 agent
-    user_input = "我要在个人文档和互联网上查询一下上海红色景点，给我一个总结报告"
-    print(f"\nUser: {user_input}")
-
-    response = await agent.run([HumanMessage(content=user_input)])
-    print(f"\nAssistant: {response}")
-
-    # 关闭连接
+    messages = []
+    while True:
+        # 运行 agent
+        user_input = input("\n请输入您的问题（或输入 'exit' 退出）：")
+        if user_input.lower() == "exit":
+            print("退出程序。")
+            break
+        messages.append(HumanMessage(content=user_input))
+        response , messages = await agent.run(messages)
+        print(f"\nAssistant: {response}")
     await agent.close()
 
 

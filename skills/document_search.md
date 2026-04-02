@@ -1,8 +1,8 @@
 ---
-name: document_search
+name: document-search
 description: 知识库检索，通过调用子agent rag 让其在内部知识库中检索一些内容，并返回相关信息
 triggers:
-  - 用户需要查询一些特定知识
+  - 用户需要在知识库查询一些知识
   - 你有一些不明白的名词或内容
 ---
 # Document_search SKILL
